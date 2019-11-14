@@ -76,11 +76,11 @@ def domain_coloring(f, limits=[-5, 5, -5, 5], samples=1000, steps=None,
   hsv_map = _get_hsv(w, raygrid, eps, dynamic_eps)
   rgb_map = hsv_to_rgb(hsv_map)
 
-  _, ax = plt.subplots()
+  fig, ax = plt.subplots()
   im = ax.imshow(rgb_map, interpolation='bilinear', extent=limits)
   ax.invert_yaxis()
 
-  return im
+  return fig, ax, im
 
 
 def _get_hsv(z, raygrid, eps, dynamic_eps):
@@ -118,14 +118,44 @@ def _get_hsv(z, raygrid, eps, dynamic_eps):
 
 def _crop_mod(mod):
   maxMod = mod.max()
-  cropped = mod.copy()
-  while maxMod > 1:
-    bigger = cropped > 1
-    cropped[bigger] = (cropped[bigger] - 1) / 2
-    maxMod = (maxMod - 1) / 2
-  return cropped
+  minMod = mod.min()
+  mod = mod.copy()
+
+  max_iter = 20
+
+  i = 0
+  prev_smaller = mod <= 1
+
+  while minMod < 1 and i < max_iter:
+    smaller = np.logical_and(prev_smaller, mod <= 1/2)
+    between = np.logical_and(prev_smaller, np.logical_not(smaller))
+
+    mod[smaller] *= 2
+    minMod *= 2
+
+    mod[between] = mod[between] * 2 - 1
+
+    i += 1
+    prev_smaller = smaller
+
+  i = 0
+  prev_bigger = 1 < mod
+
+  while 1 < maxMod and i < max_iter:
+    bigger  = 2 < mod
+    between = np.logical_and(prev_bigger, np.logical_not(bigger))
+
+    mod[bigger] /= 2
+    maxMod /= 2
+
+    mod[between] -= 1
+
+    i += 1
+    prev_bigger = bigger
+  
+  return mod
 
 
-im = domain_coloring(lambda z: (z**2 - 1) * (z - 2 - 1j)**2 / (z**2 + 2 + 2j),
-                     steps=0.005)
-plt.show()
+fig, ax, im = domain_coloring(lambda z: (z**2 - 1) * (z - 2 - 1j)**2 / (z**2 + 2 + 2j),
+                              limits=[-2.5, 2.5, -2.5, 2.5], steps=0.001)
+fig.savefig('plot2.png')
