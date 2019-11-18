@@ -158,4 +158,4 @@ def _crop_mod(mod):
 
 fig, ax, im = domain_coloring(lambda z: (z**2 - 1) * (z - 2 - 1j)**2 / (z**2 + 2 + 2j),
                               limits=[-2.5, 2.5, -2.5, 2.5], steps=0.001)
-fig.savefig('plot2.png')
+plt.show()
